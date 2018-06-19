@@ -7,6 +7,6 @@ My model:
     - 2 Layered CNN + Max Pooling + Batch Normalisation (Using ReLU activation)
     - 2 Fully Connected Layers
     
-    Random Horizontal Flips of the MNIST images is included as preprocessing technique.
+    Random Horizontal Flips of the Fashion MNIST images is included as preprocessing technique.
     
 Final Accuracy - 92.48%
