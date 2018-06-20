@@ -29,17 +29,17 @@ class Fashion(Dataset):
             and may return a horizontally flipped image."""
 
 	urls = 	[
-				'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz',
-        		'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz',
-        		'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz',
-       			'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz'
+		'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz',
+        	'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz',
+       		'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz',
+     		'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz'
     	   	]
 
 	file_name =	[
-    			 	'train-images-idx3-ubyte',
-    			 	'train-labels-idx1-ubyte',
-    			 	't10k-images-idx3-ubyte',
-    			 	't10k-labels-idx1-ubyte'
+    			 'train-images-idx3-ubyte',
+    			 'train-labels-idx1-ubyte',
+    			 't10k-images-idx3-ubyte',
+    			 't10k-labels-idx1-ubyte'
     			]
 
 	raw = "raw"
@@ -237,7 +237,8 @@ if torch.cuda.is_available():
 criterion = nn.CrossEntropyLoss()
 
 learning_rate = 0.015
-optimizer = optim.SGD(model.parameters(),lr = learning_rate)
+moment = 0.9
+optimizer = optim.SGD(model.parameters(),lr = learning_rate,momentum = moment, nesterov = True)
 
 
 iter = 0
