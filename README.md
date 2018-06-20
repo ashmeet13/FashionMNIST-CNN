@@ -9,4 +9,6 @@ My model:
     
     Random Horizontal Flips of the Fashion MNIST images is included as preprocessing technique.
     
-Final Accuracy - 92.48%
+    Optimizer Used - SGD + Nesterov Momentum
+    
+Final Accuracy - 93.29%
