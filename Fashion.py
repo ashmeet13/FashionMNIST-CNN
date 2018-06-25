@@ -1,6 +1,7 @@
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 from torch.autograd import Variable
+import matplotlib.pyplot as plt
 import torch.optim as optim
 import torch.nn as nn
 import urllib.request
@@ -17,30 +18,30 @@ import os
 
 class Fashion(Dataset):
 	"""Dataset: https://github.com/zalandoresearch/fashion-mnist
-    Args:
-        root (string): Root directory of dataset where ``processed/training.pt``
-            and  ``processed/test.pt`` exist.
-        train (bool, optional): If True, creates dataset from ``training.pt``,
-            otherwise from ``test.pt``.
-        download (bool, optional): If true, downloads the dataset from the internet and
-            puts it in root directory. If dataset is already downloaded, it is not
-            downloaded again.
-        transform (callable, optional): A function/transform that takes in a numpy image
-            and may return a horizontally flipped image."""
+	Args:
+		root (string): Root directory of dataset where ``processed/training.pt``
+			and  ``processed/test.pt`` exist.
+		train (bool, optional): If True, creates dataset from ``training.pt``,
+			otherwise from ``test.pt``.
+		download (bool, optional): If true, downloads the dataset from the internet and
+			puts it in root directory. If dataset is already downloaded, it is not
+			downloaded again.
+		transform (callable, optional): A function/transform that takes in a numpy image
+			and may return a horizontally flipped image."""
 
 	urls = 	[
-		'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz',
-        	'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz',
-       		'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz',
-     		'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz'
-    	   	]
+			'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz',
+			'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz',
+			'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz',
+			'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz'
+			]
 
 	file_name =	[
-    			 'train-images-idx3-ubyte',
-    			 'train-labels-idx1-ubyte',
-    			 't10k-images-idx3-ubyte',
-    			 't10k-labels-idx1-ubyte'
-    			]
+				'train-images-idx3-ubyte',
+				'train-labels-idx1-ubyte',
+				't10k-images-idx3-ubyte',
+				't10k-labels-idx1-ubyte'
+			]
 
 	raw = "raw"
 	processsed = "processsed"
@@ -65,6 +66,13 @@ class Fashion(Dataset):
 			self.test_images, self.test_labels = torch.load(test_path)
 
 
+
+	'''
+	__getitem__(index) -> Will return the image and label at the specified index
+	
+	If transform parametr of class is set as True the function would or would not
+	perform a random horizontal flip of the image.
+	'''
 	def __getitem__(self,index):
 		if self.train:
 			image, label = self.train_images[index], self.train_labels[index]
@@ -91,11 +99,15 @@ class Fashion(Dataset):
 			return(len(self.test_images))
 
 
-	def transform_process(self, image):
+	def transform_process(self, image): #Would or would not return a flipped image
 		self.rotate = random.getrandbits(1)
 		image = np.flip(image,self.rotate).copy()
 		return image
 
+	'''
+	download(root) -> The function will download and save the MNIST images in raw
+	format under the 'raw' folder under the user specified root directory
+	'''
 
 	def download(self, root):
 		raw_path = os.path.join(self.root,self.raw)
@@ -125,6 +137,11 @@ class Fashion(Dataset):
 		print()
 		self.process(self.root)
 
+	'''
+	process(root) -> Will process the raw downloaded files into a usable format
+	and store them into the a 'processed' folder under user specified root
+	directory.
+	'''
 
 	def process(self, root):
 		raw_path = os.path.join(self.root,self.raw)
@@ -179,12 +196,50 @@ class Fashion(Dataset):
 train_dataset = Fashion(root = "./FashionMNIST", train = True, transform = True, download = True)
 test_dataset = Fashion(root = "./FashionMNIST", train = False, transform = True, download = True)
 
+
+'''
+Calculation of total epochs using a defined batch size(batch_size)
+and total iterations(n_ters)
+'''
+
 batch_size = 100
 n_iters = 18000
 epoch_size = n_iters/(len(train_dataset)/batch_size)
 
+'''
+Loading the test dataset (test_loader)
+'''
+
 test_loader = torch.utils.data.DataLoader(dataset = test_dataset, batch_size = batch_size, shuffle = False)
 
+image_dict = {0:'T-shirt/Top', 1:'Trouser', 2:'Pullover', 3:'Dress',
+			  4:'Coat', 5:'Sandal', 6:'Shirt', 7:'Sneaker',
+			  8:'Bag', 9:'Ankle Boot'}
+for index, (images,labels) in enumerate(test_loader):
+	image=images[index][0]
+	label = labels[index]
+	plt.imshow(image)
+	plt.suptitle(image_dict[label.item()]+" - "+str(label.item()))
+	plt.show()
+	if index == 5:
+		break
+
+'''
+Model Details:
+
+Two Convolutional Layers:
+      - Using ReLU activation
+      - Batch Normalisation
+      - Uniform Xavier Weigths
+      - Max Pooling
+      
+One Fully Connected Layer:
+      - Using ReLU activation
+      
+One Fully Connected Layer:
+      - Output Layer
+
+'''
 
 class CNNModel(nn.Module):
 	def __init__(self):
@@ -230,24 +285,40 @@ class CNNModel(nn.Module):
 		out = self.fc2(out)
 		return out
 
+
+'''
+Instantiating the model class
+'''
+
 model = CNNModel()
 if torch.cuda.is_available():
 	model.cuda()
+
+'''
+Loss Function: Cross Entropy Loss
+Optimizer: Stochastic Gradient Descent (Nesterov Momentum is enabled).
+
+Variable: learning_rate -> Stores the learning rate for the optimizer function.
+          moment -> Stores the momentum for the optimizer function.
+'''
 
 criterion = nn.CrossEntropyLoss()
 
 learning_rate = 0.015
 moment = 0.9
-optimizer = optim.SGD(model.parameters(),lr = learning_rate,momentum = moment, nesterov = True)
+optimizer = optim.SGD(model.parameters(),lr = learning_rate, momentum = moment, nesterov = True)
 
 
 iter = 0
 for epoch in range(int(math.ceil(epoch_size))):
+
 	'''
-	Loading the training dataset after every epoch
-	so that there can be randomness in the horizontal
-	flips of the images
+	Loading the training dataset after every epoch which will
+	load it from the Fashion Dataset Class making a new train
+	loader for every new epoch causing random flips and random
+	shuffling of above exampled Fashion MNIST images. 
 	'''
+
 	train_loader = torch.utils.data.DataLoader(dataset = train_dataset, batch_size = batch_size, shuffle = True)
 	for i, (images, labels) in enumerate(train_loader):
 		if torch.cuda.is_available():
@@ -263,7 +334,12 @@ for epoch in range(int(math.ceil(epoch_size))):
 		optimizer.step()
 		iter += 1
 
-		if iter%10 == 0:
+		'''
+		At every 3000th epoch a test on the above initialised test dataset
+		(test_loader) would be performed and an accuracy would be provided.
+		'''
+
+		if iter%3000 == 0:
 			correct = 0
 			total = 0
 			for image,label in test_loader:
